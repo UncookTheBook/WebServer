@@ -1,0 +1,6 @@
+dev_settings.py
+venv/
+.idea/
+__pycache__/
+utb/migrations/
+
