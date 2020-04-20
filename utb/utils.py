@@ -1,7 +1,7 @@
 import re
 
 # regex to check the email correctness
-MAIL_REGEX = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
+MAIL_REGEX = '"^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
 
 
 def check_email(email):
@@ -10,4 +10,4 @@ def check_email(email):
     :param email: the input email
     :return: True if the email is valid, otherwise false
     """
-    return re.search(MAIL_REGEX, email)
+    return email and re.search(MAIL_REGEX, email)
