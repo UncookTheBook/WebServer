@@ -32,7 +32,7 @@ def check_google_token(request):
         if id_info["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
             return False, "Wrong issuer"
 
-        return True
-    except ValueError as value_error:
-        return False, str(value_error)
+        return True, None
+    except AttributeError or ValueError as error:
+        return False, str(error)
 
