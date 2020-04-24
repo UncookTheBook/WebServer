@@ -33,6 +33,6 @@ def check_google_token(request):
             return False, "Wrong issuer"
 
         return True, None
-    except AttributeError or ValueError as error:
+    except (AttributeError, ValueError) as error:
         return False, str(error)
 
