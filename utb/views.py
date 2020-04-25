@@ -1,6 +1,9 @@
-from django.http import HttpResponse
-from .models import User
+from django.http import HttpResponse, JsonResponse
+from hashlib import sha256
+
+from .models import User, Article
 from . import utils
+
 
 
 def add_user(request):
@@ -24,3 +27,18 @@ def add_user(request):
     user = User(uid, name, surname, email)
     user.save()
     return HttpResponse("User added", status=201)
+
+
+def get_article(request, link):
+    """
+
+    :param request:
+    :param link:
+    :return:
+    """
+    aid = sha256(link.encode("utf-8")).hexdigest()
+    qs = Article.objects.filter(id=aid)
+    if len(qs) == 0:
+        return HttpResponse("Article not found", status=404)
+    article = qs[0]
+    return JsonResponse(article.as_dict(), status=200)
