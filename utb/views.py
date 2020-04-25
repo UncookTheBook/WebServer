@@ -1,7 +1,6 @@
 from django.http import HttpResponse
 from .models import User
 from . import utils
-import json
 
 
 def add_user(request):
