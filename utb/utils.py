@@ -33,6 +33,16 @@ def check_google_token(request):
             return False, "Wrong issuer"
 
         return True, None
-    except AttributeError or ValueError as error:
+    except (AttributeError, ValueError) as error:
         return False, str(error)
 
+
+def get_object(request):
+    """
+    Checks if the request body contains the object
+    :param request: the request
+    :return: (True, Object as dict) if the body contains the object, otherwise (False, Error as dict)
+    """
+    if not request.body or "object" not in json.loads(request.body):
+        return False, {"error": "Missing object"}
+    return True, json.loads(request.body)["object"]
