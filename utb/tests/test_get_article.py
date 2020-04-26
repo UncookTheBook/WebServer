@@ -1,31 +1,127 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpRequest
 from django.test import TestCase
 from django.test.client import RequestFactory
-from hashlib import sha256
+from unittest.mock import Mock
+import json
 
 from utb.views import get_article
 from utb.models import Website, Article
+from utb import utils
 
 
 class GetUserTest(TestCase):
 
-    def test_missing_article(self):
+    @classmethod
+    def setUpClass(cls):
+        cls.cls_atomics = cls._enter_atomics()
+        # mocks the google_token check
+        utils.check_google_token = Mock(return_value=(True, None))
+        utils.parse_article_name_from_url = Mock(return_value="article_name")
+
+    def test_missing_object(self):
         rf = RequestFactory()
 
-        expected = HttpResponse("Missing article", status=404)
-        link = "missing"
-        request = rf.get("get_article/" + link)
-        response = get_article(request, link)
+        expected = HttpResponse("Missing object", status=404)
+        request = rf.post("get_article",
+                          data="",
+                          content_type="application/json")
+        response = get_article(request)
         self.assertEqual(str(response), str(expected))
 
-    def test_article(self):
+        request = rf.post("get_article",
+                          data=json.dumps({}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+    def test_null_or_empty_url(self):
         rf = RequestFactory()
-        website = Website(id=sha256("website".encode("utf-8")).hexdigest(), name="website")
+
+        expected = HttpResponse("Invalid arguments", status=400)
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": None, "website_name": "name"}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "", "website_name": "name"}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+    def test_null_or_empty_website_name(self):
+        rf = RequestFactory()
+
+        expected = HttpResponse("Invalid arguments", status=400)
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": None}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": ""}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+    def test_get_article(self):
+        rf = RequestFactory()
+
+        expected = JsonResponse({"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
+                                 "website": {"name": "website_name"}})
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+
+    def test_get_article_already_present(self):
+        rf = RequestFactory()
+
+        expected = JsonResponse(
+            {"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
+             "website": {"name": "website_name"}})
+        website = Website(id=utils.hash_digest("website_name"),
+                          name="website_name")
         website.save()
-        article = Article(id=sha256("link".encode("utf-8")).hexdigest(), link="link", name="name", website_id=website)
+        article = Article(id=utils.hash_digest("url"),
+                          url="url",
+                          name="name",
+                          website=website)
         article.save()
-        expected = JsonResponse(article.as_dict(), status=200)
-        link = "link"
-        request = rf.get("get_article/" + link)
-        response = get_article(request, link)
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEquals(article.as_dict(), json.loads(response.content)["article"])
+        self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
+
+    def test_get_article_website_already_present(self):
+        rf = RequestFactory()
+
+        expected = JsonResponse(
+            {"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
+             "website": {"name": "website_name"}})
+        expected_article = {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0}
+        website = Website(id=utils.hash_digest("website_name"),
+                          name="website_name")
+        website.save()
+
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
+                          content_type="application/json")
+        response = get_article(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEquals(expected_article, json.loads(response.content)["article"])
+        self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
+
+
+class GetArticleTestGoogleSignInToken(TestCase):
+    def test_invalid_token(self):
+        utils.check_google_token = Mock(return_value=(False, "Error message"))
+        expected = HttpResponse("Error message", status=403)
+        response = get_article(HttpRequest())
         self.assertEqual(str(response), str(expected))

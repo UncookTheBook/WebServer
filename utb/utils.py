@@ -2,6 +2,9 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 import re
 import json
+import urllib3
+from bs4 import BeautifulSoup
+from hashlib import sha256
 
 # regex to check the email correctness
 MAIL_REGEX = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
@@ -46,3 +49,25 @@ def get_object(request):
     if not request.body or "object" not in json.loads(request.body):
         return False, {"error": "Missing object"}
     return True, json.loads(request.body)["object"]
+
+
+def parse_article_name_from_url(url):
+    """
+    Parses the article name from the web page and returns it
+    :param url: the article's url
+    :return: the article's name
+    """
+    http = urllib3.PoolManager()
+    response = http.request('GET', url)
+    soup = BeautifulSoup(response.data, 'html.parser')
+    article_name = soup.title.string
+    article_name = re.compile(" [-|] ").split(article_name)[0]
+    return article_name
+
+
+def hash_digest(string):
+    """
+    :param string: the input string
+    :return: the SHA256 hash of the input string
+    """
+    return sha256(string.encode("utf-8")).hexdigest()
