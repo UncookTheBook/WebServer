@@ -9,7 +9,7 @@ from utb.models import Website, Article
 from utb import utils
 
 
-class GetUserTest(TestCase):
+class GetArticleTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -25,13 +25,13 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data="",
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("get_article",
                           data=json.dumps({}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_url(self):
@@ -41,13 +41,13 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": None, "website_name": "name"}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "", "website_name": "name"}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_website_name(self):
@@ -57,13 +57,13 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": None}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": ""}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_get_article(self):
@@ -74,7 +74,7 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_get_article_already_present(self):
@@ -94,7 +94,7 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEquals(article.as_dict(), json.loads(response.content)["article"])
         self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
@@ -113,7 +113,7 @@ class GetUserTest(TestCase):
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
                           content_type="application/json")
-        response = get_article(request)
+        response = get_article.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEquals(expected_article, json.loads(response.content)["article"])
         self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
@@ -123,5 +123,5 @@ class GetArticleTestGoogleSignInToken(TestCase):
     def test_invalid_token(self):
         utils.check_google_token = Mock(return_value=(False, "Error message"))
         expected = HttpResponse("Error message", status=403)
-        response = get_article(HttpRequest())
+        response = get_article.handler(HttpRequest())
         self.assertEqual(str(response), str(expected))

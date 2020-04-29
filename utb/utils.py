@@ -7,6 +7,8 @@ from bs4 import BeautifulSoup
 from hashlib import sha256
 
 # regex to check the email correctness
+from utb.models import User
+
 MAIL_REGEX = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
 
 CLIENT_ID = "234949874727-7pbe1gebujhcicmo1c0i35o948fe7oqa.apps.googleusercontent.com"
@@ -71,3 +73,12 @@ def hash_digest(string):
     :return: the SHA256 hash of the input string
     """
     return sha256(string.encode("utf-8")).hexdigest()
+
+
+def user_exists(uid):
+    """
+    :param uid: the user id to be checked
+    :return: True if the user exists, otherwise False
+    """
+    qs = User.objects.filter(id=uid)
+    return len(qs) != 0
