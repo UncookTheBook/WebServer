@@ -31,6 +31,8 @@ def handler(request):
 
     user = User.objects.get(id=user_id)
     friend = qs[0]
+    if user == friend:
+        return HttpResponse("User and friend must not be the same user", status=406)
 
     friendship = Friendship(user=user, friend=friend)
     friendship.save()

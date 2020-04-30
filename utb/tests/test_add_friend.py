@@ -79,6 +79,19 @@ class AddFriendTest(TestCase):
         response = add_friend.handler(request)
         self.assertEqual(str(response), str(expected))
 
+    def test_same_user_(self):
+        rf = RequestFactory()
+
+        user = User(id="uid", name="name", email="email@email.com")
+        user.save()
+
+        expected = HttpResponse("User and friend must not be the same user", status=406)
+        request = rf.post("add_friend",
+                          data=json.dumps({"object": {"uid": "uid", "friend_email": "email@email.com"}}),
+                          content_type="application/json")
+        response = add_friend.handler(request)
+        self.assertEqual(str(response), str(expected))
+
     def test_friendship(self):
         rf = RequestFactory()
 
