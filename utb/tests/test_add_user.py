@@ -9,7 +9,7 @@ from utb.views import add_user
 from utb.models import User
 
 
-class AddUserTestCreation(TestCase):
+class AddUserTest(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.cls_atomics = cls._enter_atomics()
@@ -23,13 +23,13 @@ class AddUserTestCreation(TestCase):
         request = rf.post("add_user",
                           data="",
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
                           data=json.dumps({}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_uid(self):
@@ -40,14 +40,14 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": None, "name": "name", "surname": "surname",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
                           data=json.dumps({"object": {"uid": "", "name": "name", "surname": "surname",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_name(self):
@@ -58,14 +58,14 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": "uid", "name": None, "surname": "surname",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
                           data=json.dumps({"object": {"uid": "uid", "name": "", "surname": "surname",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_surname(self):
@@ -76,14 +76,14 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": None,
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": "",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_null_or_empty_email(self):
@@ -94,14 +94,14 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": "surname",
                                                       "email": None}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": "surname",
                                                       "email": ""}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
     def test_invalid_email(self):
@@ -112,7 +112,7 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": "surname",
                                                       "email": "invalid.email"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         expected = HttpResponse("User added", status=201)
@@ -120,7 +120,7 @@ class AddUserTestCreation(TestCase):
                           data=json.dumps({"object": {"uid": "uid", "name": "name", "surname": "surname",
                                                       "email": "valid@email.com"}}),
                           content_type="application/json")
-        response = add_user(request)
+        response = add_user.handler(request)
 
         self.assertEqual(str(response), str(expected))
 
@@ -136,7 +136,7 @@ class AddUserTestCreation(TestCase):
                                                       "email": email}}),
                           content_type="application/json")
 
-        response = add_user(request)
+        response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertTrue(User(uid, name, surname, email) in User.objects.all())
 
@@ -145,5 +145,5 @@ class AddUserTestGoogleSignInToken(TestCase):
     def test_invalid_token(self):
         utils.check_google_token = Mock(return_value=(False, "Error message"))
         expected = HttpResponse("Error message", status=403)
-        response = add_user(HttpRequest())
+        response = add_user.handler(HttpRequest())
         self.assertEqual(str(response), str(expected))

@@ -7,6 +7,7 @@ class User(models.Model):
     surname = models.CharField(max_length=30)
     email = models.CharField(max_length=30, unique=True)
     n_reports = models.IntegerField(default=0)
+    multiplier = models.FloatField(default=1.00)
 
     def as_dict(self):
         return {"name": self.name, "surname": self.surname, "email": self.email, "n_reports": self.n_reports}
@@ -44,5 +45,10 @@ class Article(models.Model):
 
 
 class Report(models.Model):
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    article_id = models.ForeignKey(Article, on_delete=models.CASCADE)
+    REPORT_VALUES = (
+        ("L", "Legit"),
+        ("F", "Fake"),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    article = models.ForeignKey(Article, on_delete=models.CASCADE)
+    report_value = models.CharField(max_length=1, choices=REPORT_VALUES, default="L")
