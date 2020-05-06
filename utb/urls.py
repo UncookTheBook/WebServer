@@ -1,4 +1,5 @@
 from django.urls import path
+
 from utb.views import add_user, get_article, submit_report, get_leaderboard, add_friend
 
 urlpatterns = [
