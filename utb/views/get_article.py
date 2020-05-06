@@ -53,8 +53,6 @@ def add_article(article_id, url, website_name):
     """
     url = url
     article_name = utils.parse_article_name_from_url(url)
-    positive_reports = 0
-    negative_reports = 0
 
     website_id = utils.hash_digest(website_name)
     qs = Website.objects.filter(id=website_id)
@@ -63,9 +61,7 @@ def add_article(article_id, url, website_name):
     article = Article(id=article_id,
                       url=url,
                       name=article_name,
-                      website=website,
-                      positive_reports=positive_reports,
-                      negative_reports=negative_reports)
+                      website=website)
     article.save()
     return article, website
 

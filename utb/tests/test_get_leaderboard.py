@@ -35,7 +35,7 @@ class GetLeaderboardTest(TestCase):
     def test_invalid_type(self):
         rf = RequestFactory()
 
-        user = User(id="uid", name="name", surname="surname", email="email@email.com")
+        user = User(id="uid", name="name", email="email@email.com")
         user.save()
 
         expected = HttpResponse("Wrong leaderboard type", status=400)
@@ -84,9 +84,9 @@ class GetLeaderboardTest(TestCase):
 
         expected = JsonResponse({"leaderboard": [{"name": "user2", "score": 12}, {"name": "user1", "score": 8}]}, status=200)
 
-        user1 = User(id="uid1", name="user1", surname="surname1", email="user1@email.com", n_reports=4, multiplier=2.0)
+        user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, multiplier=2.0)
         user1.save()
-        user2 = User(id="uid2", name="user2", surname="surname2", email="user2@email.com", n_reports=4, multiplier=2.3)
+        user2 = User(id="uid2", name="user2", email="user2@email.com", n_reports=4, multiplier=2.3)
         user2.save()
 
         request = rf.post("get_leaderboard",
@@ -101,11 +101,11 @@ class GetLeaderboardTest(TestCase):
         expected = JsonResponse({"leaderboard": [{"name": "user2", "score": 12},
                                                  {"name": "user1", "score": 8},
                                                  {"name": "user3", "score": 0}]}, status=200)
-        user1 = User(id="uid1", name="user1", surname="surname1", email="user1@email.com", n_reports=4, multiplier=2.0)
+        user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, multiplier=2.0)
         user1.save()
-        user2 = User(id="uid2", name="user2", surname="surname2", email="user2@email.com", n_reports=4, multiplier=2.3)
+        user2 = User(id="uid2", name="user2", email="user2@email.com", n_reports=4, multiplier=2.3)
         user2.save()
-        user3 = User(id="uid3", name="user3", surname="surname3", email="user3@email.com", n_reports=0, multiplier=1.0)
+        user3 = User(id="uid3", name="user3", email="user3@email.com", n_reports=0, multiplier=1.0)
         user3.save()
         friendship1 = Friendship(user=user1, friend=user2)
         friendship1.save()

@@ -38,4 +38,3 @@ def handler(request):
     friendship.save()
 
     return HttpResponse("Created", status=201)
-
