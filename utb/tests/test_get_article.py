@@ -69,8 +69,9 @@ class GetArticleTest(TestCase):
     def test_get_article(self):
         rf = RequestFactory()
 
-        expected = JsonResponse({"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
-                                 "website": {"name": "website_name"}})
+        expected = JsonResponse(
+            {"article": {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0},
+             "website": {"name": "website_name"}})
         request = rf.post("get_article",
                           data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
                           content_type="application/json")
@@ -81,7 +82,7 @@ class GetArticleTest(TestCase):
         rf = RequestFactory()
 
         expected = JsonResponse(
-            {"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
+            {"article": {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0},
              "website": {"name": "website_name"}})
         website = Website(id=utils.hash_digest("website_name"),
                           name="website_name")
@@ -103,11 +104,13 @@ class GetArticleTest(TestCase):
         rf = RequestFactory()
 
         expected = JsonResponse(
-            {"article": {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0},
+            {"article": {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0},
              "website": {"name": "website_name"}})
-        expected_article = {"url": "url", "name": "article_name", "positive_reports": 0, "negative_reports": 0}
+        expected_article = {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0}
         website = Website(id=utils.hash_digest("website_name"),
-                          name="website_name")
+                          name="website_name",
+                          legit_reports=3,
+                          fake_reports=1)
         website.save()
 
         request = rf.post("get_article",

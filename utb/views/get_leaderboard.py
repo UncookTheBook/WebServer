@@ -34,8 +34,9 @@ def handler(request):
         user = User.objects.get(id=uid)
         data = {"leaderboard":
                     [{"name": user.name, "score": int(user.score())} for user in
-                     sorted(list(map(lambda friendship: friendship.friend, Friendship.objects.filter(user=user))) + [user],
-                            key=lambda user: user.score(), reverse=True)]}
+                     sorted(
+                         list(map(lambda friendship: friendship.friend, Friendship.objects.filter(user=user))) + [user],
+                         key=lambda user: user.score(), reverse=True)]}
         return JsonResponse(data, status=200)
     else:
         return HttpResponse("Wrong leaderboard type", status=400)
