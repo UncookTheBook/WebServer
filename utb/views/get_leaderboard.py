@@ -1,7 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 
 from utb import utils
-from utb.models import User
+from utb.models import User, Friendship
 from utb.utils import user_exists
 
 
@@ -26,11 +26,16 @@ def handler(request):
         return HttpResponse("Invalid user", status=404)
 
     if leaderboard_type == "GLOBAL":
-        rqs = User.objects.raw("SELECT id, name, (n_reports * multiplier) AS score FROM utb_user ORDER BY score DESC")
-        data = {"leaderboard": [{"name": user.name, "score": int(user.score)} for user in rqs]}
+        data = {"leaderboard":
+                    [{"name": user.name, "score": int(user.score())}
+                     for user in sorted(list(User.objects.all()), key=lambda user: user.score(), reverse=True)]}
         return JsonResponse(data, status=200)
     elif leaderboard_type == "FRIENDS":
-        # TODO
-        return HttpResponse("TODO", status=501)
+        user = User.objects.get(id=uid)
+        data = {"leaderboard":
+                    [{"name": user.name, "score": int(user.score())} for user in
+                     sorted(list(map(lambda friendship: friendship.friend, Friendship.objects.filter(user=user))) + [user],
+                            key=lambda user: user.score(), reverse=True)]}
+        return JsonResponse(data, status=200)
     else:
         return HttpResponse("Wrong leaderboard type", status=400)

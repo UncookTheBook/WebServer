@@ -5,7 +5,7 @@ from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.test import TestCase, RequestFactory
 
 from utb import utils
-from utb.models import User
+from utb.models import User, Friendship
 from utb.views import get_leaderboard
 
 
@@ -95,7 +95,28 @@ class GetLeaderboardTest(TestCase):
         response = get_leaderboard.handler(request)
         self.assertEqual(str(response), str(expected))
 
-        # TODO do tests for friends leaderboard
+    def test_friends_leaderboard(self):
+        rf = RequestFactory()
+
+        expected = JsonResponse({"leaderboard": [{"name": "user2", "score": 12},
+                                                 {"name": "user1", "score": 8},
+                                                 {"name": "user3", "score": 0}]}, status=200)
+        user1 = User(id="uid1", name="user1", surname="surname1", email="user1@email.com", n_reports=4, multiplier=2.0)
+        user1.save()
+        user2 = User(id="uid2", name="user2", surname="surname2", email="user2@email.com", n_reports=4, multiplier=2.3)
+        user2.save()
+        user3 = User(id="uid3", name="user3", surname="surname3", email="user3@email.com", n_reports=0, multiplier=1.0)
+        user3.save()
+        friendship1 = Friendship(user=user1, friend=user2)
+        friendship1.save()
+        friendship2 = Friendship(user=user1, friend=user3)
+        friendship2.save()
+
+        request = rf.post("get_leaderboard",
+                          data=json.dumps({"object": {"type": "FRIENDS", "uid": "uid1"}}),
+                          content_type="application/json")
+        response = get_leaderboard.handler(request)
+        self.assertEqual(str(response), str(expected))
 
 
 class GetLeaderboardTestGoogleSignInToken(TestCase):

@@ -12,6 +12,13 @@ class User(models.Model):
     def as_dict(self):
         return {"name": self.name, "surname": self.surname, "email": self.email, "n_reports": self.n_reports}
 
+    def score(self):
+        return self.n_reports * self.multiplier
+
+class Friendship(models.Model):
+    user = models.ForeignKey(User, related_name="user", on_delete=models.CASCADE)
+    friend = models.ForeignKey(User, related_name="friend", on_delete=models.CASCADE)
+
 
 class Website(models.Model):
     id = models.CharField(max_length=64, primary_key=True)  # hash of the name
