@@ -109,8 +109,8 @@ class GetArticleTest(TestCase):
         expected_article = {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0}
         website = Website(id=utils.hash_digest("website_name"),
                           name="website_name",
-                          legit_reports=3,
-                          fake_reports=1)
+                          legit_articles=3,
+                          fake_articles=1)
         website.save()
 
         request = rf.post("get_article",
