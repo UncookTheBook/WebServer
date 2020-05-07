@@ -89,7 +89,7 @@ class GetArticleTest(TestCase):
         website.save()
         article = Article(id=utils.hash_digest("url"),
                           url="url",
-                          name="name",
+                          name="article_name",
                           website=website)
         article.save()
         request = rf.post("get_article",
