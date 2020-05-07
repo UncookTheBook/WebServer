@@ -5,7 +5,14 @@ from utb import utils
 
 
 def handler(request):
-    # TODO TEMP
+    """
+    Adds a report to the system
+    :param request: the HTTP request
+    :return:    HttpResponse 403 if the verification token is invalid
+                HttpResponse 404 if the object is invalid
+                HttpResponse 400 if the arguments of the object are invalid
+                JsonResponse 201 if the article has been created
+    """
     is_token_valid, error_msg = utils.check_google_token(request)
     if not is_token_valid:
         return HttpResponse(error_msg, status=403)
@@ -15,6 +22,14 @@ def handler(request):
         return HttpResponse(object_json["error"], status=404)
 
     user_id, article_url, report = object_json["uid"], object_json["url"], object_json["report"]
+
+    if report == "L":
+        report_value = Report.Values.L
+    elif report == "F":
+        report_value = Report.Values.F
+    else:
+        return HttpResponse("Invalid report value", status=400)
+
     qs = User.objects.filter(id=user_id)
     if len(qs) == 0:
         return HttpResponse("User not found", status=404)
@@ -25,14 +40,91 @@ def handler(request):
         return HttpResponse("Article not found", status=404)
     article = qs[0]
 
+    previous_status = article.get_status()
+
     report = Report(user=user,
                     article=article,
-                    report_value=report)
+                    value=report_value.name)
     report.save()
-    if report == "L":
-        article.positive_reports += 1 * user.multiplier
-    else:
-        article.negative_reports += 1 * user.multiplier
+
     user.n_reports += 1
-    article.save()
     user.save()
+
+    if report_value == Report.Values.L:
+        article.legit_reports += user.weight
+    else:
+        article.fake_reports += user.weight
+
+    updated_status = article.get_status()
+    if previous_status != updated_status:
+        change_article_status(report, article, previous_status, updated_status)
+    return HttpResponse("Created", status=201)
+
+
+def change_article_status(last_report, article, previous_status, updated_status):
+    """
+    Updates the database as the article status changes.
+    More specifically, it updates the users weights, the article legit_reports and fake_reports
+    and the website legit_articles and fake_articles
+    :param last_report: the report that triggered the changes
+    :param article: the article
+    :param previous_status: the previous status of the article
+    :param updated_status: the updated status of the article
+    """
+
+    legit_reports = 0.00
+    fake_reports = 0.00
+
+    # update the weight of the user that submitted the last_report.
+    # It effectively updates only if the updated status of the article is Legit or Fake
+    # If it remains undefined, the weight stays the same since the article doesn't have a defined status
+    report_user = last_report.user
+    if last_report.value == Report.Values.L.name:
+        if updated_status == Article.Status.L:
+            report_user.weight += utils.MULTIPLIER_DELTA
+        legit_reports += report_user.weight
+    elif last_report.value == Report.Values.F.name:
+        if updated_status == Article.Status.F:
+            report_user.weight += utils.MULTIPLIER_DELTA
+        fake_reports += report_user.weight
+    report_user.save()
+
+    # update users weights (excluding the user that submitted the last report)
+    for report in Report.objects.filter(article=article).exclude(user=report_user):
+        user = report.user
+        # if the status "increases" we have to increase the weight of the users that reported the article as legit
+        # and decrease the users that reported the article as fake
+        if (previous_status == Article.Status.U and updated_status == Article.Status.L) or (
+                previous_status == Article.Status.F and updated_status == Article.Status.U):
+            if report.value == Report.Values.L.name:
+                user.weight += utils.MULTIPLIER_DELTA
+                legit_reports += user.weight
+            else:
+                user.weight -= utils.MULTIPLIER_DELTA
+                fake_reports += user.weight
+        else:
+            # otherwise, we do the contrary
+            if report.value == Report.Values.L.name:
+                user.weight -= utils.MULTIPLIER_DELTA
+                legit_reports += user.weight
+            else:
+                user.weight += utils.MULTIPLIER_DELTA
+                fake_reports += user.weight
+        user.save()
+
+    # update website
+    website = article.website
+    if previous_status == Article.Status.U and updated_status == Article.Status.L:
+        website.legit_articles += 1
+    elif previous_status == Article.Status.F and updated_status == Article.Status.U:
+        website.fake_articles -= 1
+    elif previous_status == Article.Status.L and updated_status == Article.Status.U:
+        website.legit_articles -= 1
+    elif previous_status == Article.Status.U and updated_status == Article.Status.F:
+        website.fake_articles += 1
+    website.save()
+
+    # update article
+    article.legit_reports = legit_reports
+    article.fake_reports = fake_reports
+    article.save()
