@@ -26,17 +26,25 @@ def handler(request):
         return HttpResponse("Invalid user", status=404)
 
     if leaderboard_type == "GLOBAL":
-        data = {"leaderboard":
-                    [{"name": user.name, "score": int(user.score())}
-                     for user in sorted(list(User.objects.all()), key=lambda user: user.score(), reverse=True)]}
+        user_position = None
+        leaderboard = []
+        for i, user in enumerate(sorted(list(User.objects.all()), key=lambda u: u.score(), reverse=True), 1):
+            if user.id == uid:
+                user_position = i
+            leaderboard.append({"name": user.name, "score": int(user.score())})
+        data = {"user_position": user_position, "leaderboard": leaderboard}
         return JsonResponse(data, status=200)
     elif leaderboard_type == "FRIENDS":
-        user = User.objects.get(id=uid)
-        data = {"leaderboard":
-                    [{"name": user.name, "score": int(user.score())} for user in
-                     sorted(
-                         list(map(lambda friendship: friendship.friend, Friendship.objects.filter(user=user))) + [user],
-                         key=lambda user: user.score(), reverse=True)]}
+        requester = User.objects.get(id=uid)
+        user_position = None
+        leaderboard = []
+        for i, user in enumerate(sorted(
+                list(map(lambda friendship: friendship.friend, Friendship.objects.filter(user=requester))) + [
+                    requester], key=lambda user: user.score(), reverse=True), 1):
+            if user.id == uid:
+                user_position = i
+            leaderboard.append({"name": user.name, "score": int(user.score())})
+        data = {"user_position": user_position, "leaderboard": leaderboard}
         return JsonResponse(data, status=200)
     else:
         return HttpResponse("Wrong leaderboard type", status=400)

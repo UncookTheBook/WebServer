@@ -74,7 +74,7 @@ def hash_digest(string):
     :param string: the input string
     :return: the SHA256 hash of the input string
     """
-    return sha256(string.encode("utf-8")).hexdigest() if string is None else None
+    return sha256(string.encode("utf-8")).hexdigest() if string is not None else None
 
 
 def user_exists(uid):

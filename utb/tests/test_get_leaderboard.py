@@ -82,7 +82,7 @@ class GetLeaderboardTest(TestCase):
     def test_leaderboard(self):
         rf = RequestFactory()
 
-        expected = JsonResponse({"leaderboard": [{"name": "user2", "score": 12}, {"name": "user1", "score": 8}]}, status=200)
+        expected = JsonResponse({"user_position":2, "leaderboard": [{"name": "user2", "score": 12}, {"name": "user1", "score": 8}]}, status=200)
 
         user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
         user1.save()
@@ -98,9 +98,9 @@ class GetLeaderboardTest(TestCase):
     def test_friends_leaderboard(self):
         rf = RequestFactory()
 
-        expected = JsonResponse({"leaderboard": [{"name": "user2", "score": 12},
-                                                 {"name": "user1", "score": 8},
-                                                 {"name": "user3", "score": 0}]}, status=200)
+        expected = JsonResponse({"user_position": 2, "leaderboard": [{"name": "user2", "score": 12},
+                                                                     {"name": "user1", "score": 8},
+                                                                     {"name": "user3", "score": 0}]}, status=200)
         user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
         user1.save()
         user2 = User(id="uid2", name="user2", email="user2@email.com", n_reports=4, weight=2.3)
