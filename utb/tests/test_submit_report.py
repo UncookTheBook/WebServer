@@ -121,6 +121,37 @@ class SubmitReportTest(TestCase):
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
 
+    def test_submit_same_report_twice(self):
+        rf = RequestFactory()
+
+        user = User(id="uid", name="name", email="valid@email.com")
+        user.save()
+
+        website_id = utils.hash_digest("website_name")
+        website = Website(id=website_id, name="website_name")
+        website.save()
+
+        article_id = utils.hash_digest("article_url")
+        article = Article(id=article_id, url="article_url", website=website)
+        article.save()
+
+        expected = HttpResponse("Created", status=201)
+        request = rf.post("submit_report",
+                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
+                                                      "report": "L"}}),
+                          content_type="application/json")
+        response = submit_report.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.L.name)
+
+        request = rf.post("submit_report",
+                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
+                                                      "report": "F"}}),
+                          content_type="application/json")
+        response = submit_report.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.F.name)
+
     def test_submit_report_change_status_legit_to_undefined(self):
         rf = RequestFactory()
 

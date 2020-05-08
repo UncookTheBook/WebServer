@@ -81,3 +81,6 @@ class Report(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     value = models.CharField(max_length=1, choices=VALUES)
+
+    class Meta:
+        unique_together = (("user", "article"),)
