@@ -42,9 +42,14 @@ def handler(request):
 
     previous_status = article.get_status()
 
-    report = Report(user=user,
-                    article=article,
-                    value=report_value.name)
+    qs = Report.objects.filter(user=user, article=article)
+    if len(qs) == 0:
+        report = Report(user=user,
+                        article=article,
+                        value=report_value.name)
+    else:
+        report = qs[0]
+        report.value = report_value.name
     report.save()
 
     user.n_reports += 1
