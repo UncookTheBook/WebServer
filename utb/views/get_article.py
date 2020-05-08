@@ -1,7 +1,7 @@
 from django.http import JsonResponse, HttpResponse
 
 from utb import utils
-from utb.models import Website, Article
+from utb.models import Website, Article, Report
 
 
 def handler(request):
@@ -13,9 +13,14 @@ def handler(request):
                 HttpResponse 400 if the arguments of the object are invalid
                 JsonResponse 200 with body (article, website) as JSON if the article has been created
     """
-    is_token_valid, error_msg = utils.check_google_token(request)
+    is_token_valid, message = utils.check_google_token(request)
     if not is_token_valid:
-        return HttpResponse(error_msg, status=403)
+        return HttpResponse(message, status=403)
+    user_id = message
+
+    user = utils.get_user_by_id(user_id)
+    if not user:
+        return HttpResponse("Missing user", status=404)
 
     is_object_present, object_json = utils.get_object(request)
     if not is_object_present:
@@ -34,11 +39,15 @@ def handler(request):
         # here I use get because I'm sure that the website exists
         website = Website.objects.get(id=article.website.id)
 
+    qs = Report.objects.filter(user=user, article=article)
+    if len(qs) != 0:
+        report = qs[0]
+        data = {"article": article.as_dict(), "website": website.as_dict(), "report": report.as_dict()}
+    else:
+        data = {"article": article.as_dict(), "website": website.as_dict()}
+
     return JsonResponse(
-        {
-            "article": article.as_dict(),
-            "website": website.as_dict()
-        },
+        data,
         status=200
     )
 

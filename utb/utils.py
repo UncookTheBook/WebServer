@@ -30,7 +30,7 @@ def check_google_token(request):
     Checks if the authentication token of the user is valid
     See https://developers.google.com/identity/sign-in/android/backend-auth
     :param request: the http request
-    :return: True if the token is valid, otherwise False and the error message
+    :return: (True, user id) if the token is valid, otherwise (False, error message)
     """
     try:
         token = json.loads(request.body)["token"]
@@ -39,7 +39,7 @@ def check_google_token(request):
         if id_info["iss"] not in ["accounts.google.com", "https://accounts.google.com"]:
             return False, "Wrong issuer"
 
-        return True, None
+        return True, id_info["sub"]
     except (AttributeError, ValueError) as error:
         return False, str(error)
 
@@ -77,10 +77,10 @@ def hash_digest(string):
     return sha256(string.encode("utf-8")).hexdigest() if string is not None else None
 
 
-def user_exists(uid):
+def get_user_by_id(uid):
     """
     :param uid: the user id to be checked
-    :return: True if the user exists, otherwise False
+    :return: the user if he exists, otherwise None
     """
     qs = User.objects.filter(id=uid)
-    return len(qs) != 0
+    return qs[0] if len(qs) != 0 else None

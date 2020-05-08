@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 
-from utb.models import User, Article, Report
+from utb.models import Article, Report
 from utb import utils
 
 
@@ -13,15 +13,20 @@ def handler(request):
                 HttpResponse 400 if the arguments of the object are invalid
                 JsonResponse 201 if the article has been created
     """
-    is_token_valid, error_msg = utils.check_google_token(request)
+    is_token_valid, message = utils.check_google_token(request)
     if not is_token_valid:
-        return HttpResponse(error_msg, status=403)
+        return HttpResponse(message, status=403)
+    user_id = message
+
+    user = utils.get_user_by_id(user_id)
+    if not user:
+        return HttpResponse("Missing user", status=404)
 
     is_object_present, object_json = utils.get_object(request)
     if not is_object_present:
         return HttpResponse(object_json["error"], status=404)
 
-    user_id, article_url, report = object_json["uid"], object_json["url"], object_json["report"]
+    article_url, report = object_json["url"], object_json["report"]
 
     if report == "L":
         report_value = Report.Values.L
@@ -29,11 +34,6 @@ def handler(request):
         report_value = Report.Values.F
     else:
         return HttpResponse("Invalid report value", status=400)
-
-    qs = User.objects.filter(id=user_id)
-    if len(qs) == 0:
-        return HttpResponse("User not found", status=404)
-    user = qs[0]
 
     qs = Article.objects.filter(id=utils.hash_digest(article_url))
     if len(qs) == 0:

@@ -14,7 +14,7 @@ class AddUserTest(TestCase):
     def setUpClass(cls):
         cls.cls_atomics = cls._enter_atomics()
         # mocks the google_token check
-        utils.check_google_token = Mock(return_value=(True, None))
+        utils.check_google_token = Mock(return_value=(True, "uid"))
 
     def test_missing_object(self):
         rf = RequestFactory()
@@ -32,37 +32,19 @@ class AddUserTest(TestCase):
         response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
-    def test_null_or_empty_uid(self):
-        rf = RequestFactory()
-
-        expected = HttpResponse("Invalid arguments", status=400)
-        request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": None, "name": "name",
-                                                      "email": "email@email.com"}}),
-                          content_type="application/json")
-        response = add_user.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-        request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "", "name": "name",
-                                                      "email": "email@email.com"}}),
-                          content_type="application/json")
-        response = add_user.handler(request)
-        self.assertEqual(str(response), str(expected))
-
     def test_null_or_empty_name(self):
         rf = RequestFactory()
 
         expected = HttpResponse("Invalid arguments", status=400)
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": None,
+                          data=json.dumps({"object": {"name": None,
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
         response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": "",
+                          data=json.dumps({"object": {"name": "",
                                                       "email": "email@email.com"}}),
                           content_type="application/json")
         response = add_user.handler(request)
@@ -73,14 +55,14 @@ class AddUserTest(TestCase):
 
         expected = HttpResponse("Invalid arguments", status=400)
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": "name",
+                          data=json.dumps({"object": {"name": "name",
                                                       "email": None}}),
                           content_type="application/json")
         response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": "name",
+                          data=json.dumps({"object": {"name": "name",
                                                       "email": ""}}),
                           content_type="application/json")
         response = add_user.handler(request)
@@ -91,7 +73,7 @@ class AddUserTest(TestCase):
 
         expected = HttpResponse("Invalid arguments", status=400)
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": "name",
+                          data=json.dumps({"object": {"name": "name",
                                                       "email": "invalid.email"}}),
                           content_type="application/json")
         response = add_user.handler(request)
@@ -99,7 +81,7 @@ class AddUserTest(TestCase):
 
         expected = HttpResponse("User added", status=201)
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": "uid", "name": "name",
+                          data=json.dumps({"object": {"name": "name",
                                                       "email": "valid@email.com"}}),
                           content_type="application/json")
         response = add_user.handler(request)
@@ -108,18 +90,14 @@ class AddUserTest(TestCase):
 
     def test_valid_user(self):
         rf = RequestFactory()
-        uid = "uid"
-        name = "name"
-        email = "valid@email.com"
         expected = HttpResponse("User added", status=201)
         request = rf.post("add_user",
-                          data=json.dumps({"object": {"uid": uid, "name": name,
-                                                      "email": email}}),
+                          data=json.dumps({"object": {"name": "name", "email": "valid@email.com"}}),
                           content_type="application/json")
 
         response = add_user.handler(request)
         self.assertEqual(str(response), str(expected))
-        self.assertTrue(User(uid, name, email) in User.objects.all())
+        self.assertTrue(User("uid", "name", "valid@email.com") in User.objects.all())
 
 
 class AddUserTestGoogleSignInToken(TestCase):

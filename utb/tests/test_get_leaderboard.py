@@ -14,7 +14,8 @@ class GetLeaderboardTest(TestCase):
     def setUpClass(cls):
         cls.cls_atomics = cls._enter_atomics()
         # mocks the google_token check
-        utils.check_google_token = Mock(return_value=(True, None))
+        User(id="uid", name="name", email="email@email.com").save()
+        utils.check_google_token = Mock(return_value=(True, "uid"))
 
     def test_missing_object(self):
         rf = RequestFactory()
@@ -40,41 +41,19 @@ class GetLeaderboardTest(TestCase):
 
         expected = HttpResponse("Wrong leaderboard type", status=400)
         request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": None, "uid": "uid"}}),
+                          data=json.dumps({"object": {"type": None}}),
                           content_type="application/json")
         response = get_leaderboard.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "", "uid": "uid"}}),
+                          data=json.dumps({"object": {"type": ""}}),
                           content_type="application/json")
         response = get_leaderboard.handler(request)
         self.assertEqual(str(response), str(expected))
 
         request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "INVALID", "uid": "uid"}}),
-                          content_type="application/json")
-        response = get_leaderboard.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-    def test_invalid_uid(self):
-        rf = RequestFactory()
-
-        expected = HttpResponse("Invalid user", status=404)
-        request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "GLOBAL", "uid": None}}),
-                          content_type="application/json")
-        response = get_leaderboard.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-        request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "GLOBAL", "uid": ""}}),
-                          content_type="application/json")
-        response = get_leaderboard.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-        request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "GLOBAL", "uid": "not_present"}}),
+                          data=json.dumps({"object": {"type": "INVALID"}}),
                           content_type="application/json")
         response = get_leaderboard.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -84,13 +63,13 @@ class GetLeaderboardTest(TestCase):
 
         expected = JsonResponse({"user_position":2, "leaderboard": [{"name": "user2", "score": 12}, {"name": "user1", "score": 8}]}, status=200)
 
-        user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
+        user1 = User(id="uid", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
         user1.save()
         user2 = User(id="uid2", name="user2", email="user2@email.com", n_reports=4, weight=2.3)
         user2.save()
 
         request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "GLOBAL", "uid": "uid1"}}),
+                          data=json.dumps({"object": {"type": "GLOBAL"}}),
                           content_type="application/json")
         response = get_leaderboard.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -101,7 +80,7 @@ class GetLeaderboardTest(TestCase):
         expected = JsonResponse({"user_position": 2, "leaderboard": [{"name": "user2", "score": 12},
                                                                      {"name": "user1", "score": 8},
                                                                      {"name": "user3", "score": 0}]}, status=200)
-        user1 = User(id="uid1", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
+        user1 = User(id="uid", name="user1", email="user1@email.com", n_reports=4, weight=2.0)
         user1.save()
         user2 = User(id="uid2", name="user2", email="user2@email.com", n_reports=4, weight=2.3)
         user2.save()
@@ -113,9 +92,17 @@ class GetLeaderboardTest(TestCase):
         friendship2.save()
 
         request = rf.post("get_leaderboard",
-                          data=json.dumps({"object": {"type": "FRIENDS", "uid": "uid1"}}),
+                          data=json.dumps({"object": {"type": "FRIENDS"}}),
                           content_type="application/json")
         response = get_leaderboard.handler(request)
+        self.assertEqual(str(response), str(expected))
+
+
+class GetLeaderboardTestInvalidUser(TestCase):
+    def test_invalid_user(self):
+        expected = HttpResponse("Missing user", status=404)
+        utils.check_google_token = Mock(return_value=(True, "uid"))
+        response = get_leaderboard.handler(HttpRequest())
         self.assertEqual(str(response), str(expected))
 
 

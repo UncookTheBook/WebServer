@@ -84,3 +84,6 @@ class Report(models.Model):
 
     class Meta:
         unique_together = (("user", "article"),)
+
+    def as_dict(self):
+        return {"user_id": self.user.id, "article_url": self.article.url, "value": self.value}

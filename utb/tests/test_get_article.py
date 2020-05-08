@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import json
 
 from utb.views import get_article
-from utb.models import Website, Article
+from utb.models import Website, Article, User, Report
 from utb import utils
 
 
@@ -15,7 +15,8 @@ class GetArticleTest(TestCase):
     def setUpClass(cls):
         cls.cls_atomics = cls._enter_atomics()
         # mocks the google_token check
-        utils.check_google_token = Mock(return_value=(True, None))
+        User(id="uid", name="name", email="email@email.com").save()
+        utils.check_google_token = Mock(return_value=(True, "uid"))
         utils.parse_article_name_from_url = Mock(return_value="article_name")
 
     def test_missing_object(self):
@@ -120,6 +121,43 @@ class GetArticleTest(TestCase):
         self.assertEqual(str(response), str(expected))
         self.assertEquals(expected_article, json.loads(response.content)["article"])
         self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
+
+    def test_get_article_with_report(self):
+        rf = RequestFactory()
+
+        expected = JsonResponse(
+            {"article": {"url": "url", "name": "article_name", "legit_reports": 0, "fake_reports": 0},
+             "website": {"name": "website_name"},
+             "report": {"user_id": "uid", "article": "url", "value": "L"}})
+
+        website = Website(id=utils.hash_digest("website_name"),
+                          name="website_name")
+        website.save()
+        article = Article(id=utils.hash_digest("url"),
+                          url="url",
+                          name="article_name",
+                          website=website)
+        article.save()
+
+        user = User.objects.get(id="uid")
+        report = Report(user=user, article=article, value=Report.Values.L.name)
+        report.save()
+        request = rf.post("get_article",
+                          data=json.dumps({"object": {"url": "url", "website_name": "website_name"}}),
+                          content_type="application/json")
+        response = get_article.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEquals(article.as_dict(), json.loads(response.content)["article"])
+        self.assertEquals(website.as_dict(), json.loads(response.content)["website"])
+        self.assertEquals(report.as_dict(), json.loads(response.content)["report"])
+
+
+class AddFriendTestInvalidUser(TestCase):
+    def test_invalid_user(self):
+        expected = HttpResponse("Missing user", status=404)
+        utils.check_google_token = Mock(return_value=(True, "uid"))
+        response = get_article.handler(HttpRequest())
+        self.assertEqual(str(response), str(expected))
 
 
 class GetArticleTestGoogleSignInToken(TestCase):

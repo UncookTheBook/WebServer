@@ -14,7 +14,8 @@ class SubmitReportTest(TestCase):
     def setUpClass(cls):
         cls.cls_atomics = cls._enter_atomics()
         # mocks the google_token check
-        utils.check_google_token = Mock(return_value=(True, None))
+        User(id="uid", name="name", email="email@email.com").save()
+        utils.check_google_token = Mock(return_value=(True, "uid"))
 
     def test_missing_object(self):
         rf = RequestFactory()
@@ -37,43 +38,21 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Invalid report value", status=400)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": None}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": None}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
 
         expected = HttpResponse("Invalid report value", status=400)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": None}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": None}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
 
         expected = HttpResponse("Invalid report value", status=400)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "G"}}),
-                          content_type="application/json")
-        response = submit_report.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-    def test_invalid_user(self):
-        rf = RequestFactory()
-
-        expected = HttpResponse("User not found", status=404)
-        request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": None, "url": "article_url",
-                                                      "report": "L"}}),
-                          content_type="application/json")
-        response = submit_report.handler(request)
-        self.assertEqual(str(response), str(expected))
-
-        expected = HttpResponse("User not found", status=404)
-        request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "not_found", "url": "article_url",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "G"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -85,7 +64,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Article not found", status=404)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": None,
+                          data=json.dumps({"object": {"url": None,
                                                       "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
@@ -93,8 +72,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Article not found", status=404)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "not_found",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "not_found", "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -115,8 +93,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -137,16 +114,14 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.L.name)
 
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "F"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "F"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -173,8 +148,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "F"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "F"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -206,8 +180,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "F"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "F"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -235,8 +208,7 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
@@ -268,13 +240,20 @@ class SubmitReportTest(TestCase):
 
         expected = HttpResponse("Created", status=201)
         request = rf.post("submit_report",
-                          data=json.dumps({"object": {"uid": "uid", "url": "article_url",
-                                                      "report": "L"}}),
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
                           content_type="application/json")
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.L)
         self.assertEquals(Website.objects.get(id=website_id).legit_percentage(), 1.00)
+
+
+class SubmitReportTestInvalidUser(TestCase):
+    def test_invalid_user(self):
+        expected = HttpResponse("Missing user", status=404)
+        utils.check_google_token = Mock(return_value=(True, "uid"))
+        response = submit_report.handler(HttpRequest())
+        self.assertEqual(str(response), str(expected))
 
 
 class SubmitReportTestGoogleSignInToken(TestCase):
