@@ -47,18 +47,28 @@ def handler(request):
         report = Report(user=user,
                         article=article,
                         value=report_value.name)
+        user.n_reports += 1
+        user.save()
+        # in the case the report was not present before, we only have to add the weight of the user to the
+        # corresponding value
+        if report_value == Report.Values.L:
+            article.legit_reports += user.weight
+        else:
+            article.fake_reports += user.weight
     else:
         report = qs[0]
+        old_report_value = report.value
         report.value = report_value.name
+        # in case the report was already present, we take its old value and update the numbers of legit
+        # and fake reports for the article accordingly
+        if old_report_value != report.value:
+            if report.value == Report.Values.L.name:
+                article.fake_reports -= user.weight
+                article.legit_reports += user.weight
+            else:
+                article.legit_reports -= user.weight
+                article.fake_reports += user.weight
     report.save()
-
-    user.n_reports += 1
-    user.save()
-
-    if report_value == Report.Values.L:
-        article.legit_reports += user.weight
-    else:
-        article.fake_reports += user.weight
 
     updated_status = article.get_status()
     if previous_status != updated_status:
@@ -97,36 +107,51 @@ def change_article_status(last_report, article, previous_status, updated_status)
     # update users weights (excluding the user that submitted the last report)
     for report in Report.objects.filter(article=article).exclude(user=report_user):
         user = report.user
-        # if the status "increases" we have to increase the weight of the users that reported the article as legit
-        # and decrease the users that reported the article as fake
+        # if the status "increases" by one step we have to increase the weight of the users
+        # that reported the article as legit and decrease the users that reported the article as fake
         if (previous_status == Article.Status.U and updated_status == Article.Status.L) or (
                 previous_status == Article.Status.F and updated_status == Article.Status.U):
             if report.value == Report.Values.L.name:
                 user.weight += utils.MULTIPLIER_DELTA
-                legit_reports += user.weight
             else:
                 user.weight -= utils.MULTIPLIER_DELTA
-                fake_reports += user.weight
-        else:
-            # otherwise, we do the contrary
+        # otherwise, we do the contrary
+        elif (previous_status == Article.Status.L and updated_status == Article.Status.U) or (
+                previous_status == Article.Status.U and updated_status == Article.Status.F):
             if report.value == Report.Values.L.name:
                 user.weight -= utils.MULTIPLIER_DELTA
-                legit_reports += user.weight
             else:
                 user.weight += utils.MULTIPLIER_DELTA
-                fake_reports += user.weight
+        # if we have that the article goes from fake to legit, we have to increment the weight twice
+        elif previous_status == Article.Status.F and updated_status == Article.Status.L:
+            if report.value == Report.Values.L.name:
+                user.weight += 2 * utils.MULTIPLIER_DELTA
+            else:
+                user.weight -= 2 * utils.MULTIPLIER_DELTA
+        # same for legit to fake
+        elif previous_status == Article.Status.L and updated_status == Article.Status.F:
+            if report.value == Report.Values.L.name:
+                user.weight -= 2 * utils.MULTIPLIER_DELTA
+            else:
+                user.weight += 2 * utils.MULTIPLIER_DELTA
+        if report.value == Report.Values.L.name:
+            legit_reports += user.weight
+        else:
+            fake_reports += user.weight
         user.save()
 
     # update website
     website = article.website
-    if previous_status == Article.Status.U and updated_status == Article.Status.L:
+    if updated_status == Article.Status.L:
         website.legit_articles += 1
-    elif previous_status == Article.Status.F and updated_status == Article.Status.U:
-        website.fake_articles -= 1
-    elif previous_status == Article.Status.L and updated_status == Article.Status.U:
-        website.legit_articles -= 1
-    elif previous_status == Article.Status.U and updated_status == Article.Status.F:
+    if updated_status == Article.Status.F:
         website.fake_articles += 1
+    if updated_status == Article.Status.U:
+        if previous_status == Article.Status.L:
+            website.legit_articles -= 1
+        else:
+            website.fake_articles -= 1
+
     website.save()
 
     # update article
