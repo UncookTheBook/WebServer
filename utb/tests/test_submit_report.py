@@ -119,6 +119,7 @@ class SubmitReportTest(TestCase):
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.L.name)
+        self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.L)
 
         request = rf.post("submit_report",
                           data=json.dumps({"object": {"url": "article_url", "report": "F"}}),
@@ -126,6 +127,15 @@ class SubmitReportTest(TestCase):
         response = submit_report.handler(request)
         self.assertEqual(str(response), str(expected))
         self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.F.name)
+        self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.F)
+
+        request = rf.post("submit_report",
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
+                          content_type="application/json")
+        response = submit_report.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEqual(Report.objects.get(user=user, article=article).value, Report.Values.L.name)
+        self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.L)
 
     def test_submit_report_change_status_legit_to_undefined(self):
         rf = RequestFactory()
@@ -246,6 +256,70 @@ class SubmitReportTest(TestCase):
         self.assertEqual(str(response), str(expected))
         self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.L)
         self.assertEquals(Website.objects.get(id=website_id).legit_percentage(), 1.00)
+
+    def test_submit_report_change_status_fake_to_legit(self):
+        rf = RequestFactory()
+
+        user = User(id="uid", name="name", email="valid@email.com", weight=50)
+        user.save()
+        user2 = User(id="uid2", name="name2", email="valid2@email.com", weight=10)
+        user2.save()
+        user3 = User(id="uid3", name="name3", email="valid3@email.com", weight=30)
+        user3.save()
+
+        website_id = utils.hash_digest("website_name")
+        website = Website(id=website_id, name="website_name")
+        website.save()
+
+        article_id = utils.hash_digest("article_url")
+        article = Article(id=article_id, url="article_url", website=website, legit_reports=10.0, fake_reports=30.0)
+        article.save()
+
+        report1 = Report(user=user2, article=article, value=Report.Values.L.name)
+        report1.save()
+        report2 = Report(user=user3, article=article, value=Report.Values.F.name)
+        report2.save()
+
+        expected = HttpResponse("Created", status=201)
+        request = rf.post("submit_report",
+                          data=json.dumps({"object": {"url": "article_url", "report": "L"}}),
+                          content_type="application/json")
+        response = submit_report.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.L)
+        self.assertEquals(Website.objects.get(id=website_id).legit_percentage(), 1.00)
+
+    def test_submit_report_change_status_legit_to_fake(self):
+        rf = RequestFactory()
+
+        user = User(id="uid", name="name", email="valid@email.com", weight=50)
+        user.save()
+        user2 = User(id="uid2", name="name2", email="valid2@email.com", weight=10)
+        user2.save()
+        user3 = User(id="uid3", name="name3", email="valid3@email.com", weight=30)
+        user3.save()
+
+        website_id = utils.hash_digest("website_name")
+        website = Website(id=website_id, name="website_name")
+        website.save()
+
+        article_id = utils.hash_digest("article_url")
+        article = Article(id=article_id, url="article_url", website=website, legit_reports=30.0, fake_reports=10.0)
+        article.save()
+
+        report1 = Report(user=user2, article=article, value=Report.Values.F.name)
+        report1.save()
+        report2 = Report(user=user3, article=article, value=Report.Values.L.name)
+        report2.save()
+
+        expected = HttpResponse("Created", status=201)
+        request = rf.post("submit_report",
+                          data=json.dumps({"object": {"url": "article_url", "report": "F"}}),
+                          content_type="application/json")
+        response = submit_report.handler(request)
+        self.assertEqual(str(response), str(expected))
+        self.assertEquals(Article.objects.get(id=article_id).get_status(), Article.Status.F)
+        self.assertEquals(Website.objects.get(id=website_id).legit_percentage(), 0.00)
 
 
 class SubmitReportTestInvalidUser(TestCase):
