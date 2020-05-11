@@ -139,14 +139,17 @@ def change_article_status(last_report, article, previous_status, updated_status)
         else:
             fake_reports += user.weight
         user.save()
-
     # update website
     website = article.website
     if updated_status == Article.Status.L:
         website.legit_articles += 1
-    if updated_status == Article.Status.F:
+        if previous_status == Article.Status.F:
+            website.fake_articles -= 1
+    elif updated_status == Article.Status.F:
         website.fake_articles += 1
-    if updated_status == Article.Status.U:
+        if previous_status == Article.Status.L:
+            website.legit_articles -= 1
+    elif updated_status == Article.Status.U:
         if previous_status == Article.Status.L:
             website.legit_articles -= 1
         else:
