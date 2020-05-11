@@ -35,7 +35,7 @@ class Website(models.Model):
         if self.legit_articles + self.fake_articles == 0:
             return 1.00  # if there are no reports we assume that a website is legit
         percentage = (self.legit_articles * 2) / (self.legit_articles + self.fake_articles)
-        return 1.00 if percentage > 1 else percentage
+        return 1.00 if percentage > 1 else round(percentage, 2)
 
 
 class Article(models.Model):
