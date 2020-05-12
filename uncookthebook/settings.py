@@ -15,18 +15,17 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# see dev_settings_example to understand how to structure the dev_settings file
+try:
+    from dev_settings import *
+except ImportError:
+    DATABASE_USER = ""
+    DATABASE_PASSWORD = ""
+    SECRET_KEY = ""
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ")m*n#a2cb!&1qy#5d31n!lcy_-!ka*nema6i*iizmz@6$*o9$7"
-
-# SECURITY WARNING: don"t run with debug turned on in production!
 DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -73,13 +72,6 @@ WSGI_APPLICATION = "uncookthebook.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
-# see dev_settings_example to understand how to structure the dev_settings file
-try:
-    from dev_settings import *
-except ImportError:
-    DATABASE_USER = ""
-    DATABASE_PASSWORD = ""
 
 DATABASES = {
     "default": {
