@@ -56,7 +56,7 @@ class Article(models.Model):
                 "legit_reports": int(self.legit_reports), "fake_reports": int(self.fake_reports)}
 
     def get_status(self):
-        if self.legit_reports + self.fake_reports == 0:
+        if self.legit_reports + self.fake_reports < 5:
             return self.Status.U
         legit_ratio = self.legit_reports / (self.legit_reports + self.fake_reports)
         if legit_ratio > 0.6:
