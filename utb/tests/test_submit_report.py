@@ -101,7 +101,7 @@ class SubmitReportTest(TestCase):
     def test_submit_same_report_twice(self):
         rf = RequestFactory()
 
-        user = User(id="uid", name="name", email="valid@email.com")
+        user = User(id="uid", name="name", email="valid@email.com", weight=10)
         user.save()
 
         website_id = utils.hash_digest("website_name")
@@ -268,7 +268,7 @@ class SubmitReportTest(TestCase):
         user3.save()
 
         website_id = utils.hash_digest("website_name")
-        website = Website(id=website_id, name="website_name")
+        website = Website(id=website_id, name="website_name", fake_articles=1)
         website.save()
 
         article_id = utils.hash_digest("article_url")
@@ -300,7 +300,7 @@ class SubmitReportTest(TestCase):
         user3.save()
 
         website_id = utils.hash_digest("website_name")
-        website = Website(id=website_id, name="website_name")
+        website = Website(id=website_id, name="website_name", legit_articles=1)
         website.save()
 
         article_id = utils.hash_digest("article_url")

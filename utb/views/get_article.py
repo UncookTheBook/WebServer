@@ -1,7 +1,11 @@
 from django.http import JsonResponse, HttpResponse
+import logging as log
 
 from utb import utils
 from utb.models import Website, Article, Report
+
+LOGGING_TAG = "GetArticle: "
+log.basicConfig(level=log.INFO)
 
 
 def handler(request):
@@ -15,19 +19,23 @@ def handler(request):
     """
     is_token_valid, message = utils.check_google_token(request)
     if not is_token_valid:
+        log.error(LOGGING_TAG + message)
         return HttpResponse(message, status=403)
     user_id = message
 
     user = utils.get_user_by_id(user_id)
     if not user:
+        log.error(LOGGING_TAG + "Missing user")
         return HttpResponse("Missing user", status=404)
 
     is_object_present, object_json = utils.get_object(request)
     if not is_object_present:
+        log.error(LOGGING_TAG + object_json["error"])
         return HttpResponse(object_json["error"], status=404)
 
     url, website_name = object_json["url"], object_json["website_name"]
     if not url or not website_name:
+        log.error(LOGGING_TAG + "Invalid arguments")
         return HttpResponse("Invalid arguments", status=400)
 
     article_id = utils.hash_digest(url)
@@ -72,6 +80,7 @@ def add_article(article_id, url, website_name):
                       name=article_name,
                       website=website)
     article.save()
+    log.info(LOGGING_TAG + "Article " + article_name + " created")
     return article, website
 
 
@@ -85,4 +94,5 @@ def add_website(website_id, website_name):
     website = Website(id=website_id,
                       name=website_name)
     website.save()
+    log.info(LOGGING_TAG + "Website " + website_name + " created")
     return website

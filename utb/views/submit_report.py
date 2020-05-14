@@ -1,7 +1,11 @@
 from django.http import HttpResponse
+import logging as log
 
 from utb.models import Article, Report
 from utb import utils
+
+LOGGING_TAG = "SubmitReport: "
+log.basicConfig(level=log.INFO)
 
 
 def handler(request):
@@ -15,15 +19,18 @@ def handler(request):
     """
     is_token_valid, message = utils.check_google_token(request)
     if not is_token_valid:
+        log.error(LOGGING_TAG + message)
         return HttpResponse(message, status=403)
     user_id = message
 
     user = utils.get_user_by_id(user_id)
     if not user:
+        log.error(LOGGING_TAG + "Missing user")
         return HttpResponse("Missing user", status=404)
 
     is_object_present, object_json = utils.get_object(request)
     if not is_object_present:
+        log.error(LOGGING_TAG + object_json["error"])
         return HttpResponse(object_json["error"], status=404)
 
     article_url, report = object_json["url"], object_json["report"]
@@ -33,10 +40,12 @@ def handler(request):
     elif report == "F":
         report_value = Report.Values.F
     else:
+        log.error(LOGGING_TAG + "Invalid report value")
         return HttpResponse("Invalid report value", status=400)
 
     qs = Article.objects.filter(id=utils.hash_digest(article_url))
     if len(qs) == 0:
+        log.error(LOGGING_TAG + "Article not found")
         return HttpResponse("Article not found", status=404)
     article = qs[0]
 
@@ -69,6 +78,7 @@ def handler(request):
                 article.legit_reports -= user.weight
                 article.fake_reports += user.weight
     report.save()
+    log.info(LOGGING_TAG + "Report with user " + user.email + " and article " + article.url + " created")
 
     updated_status = article.get_status()
     if previous_status != updated_status:
@@ -154,7 +164,6 @@ def change_article_status(last_report, article, previous_status, updated_status)
             website.legit_articles -= 1
         else:
             website.fake_articles -= 1
-
     website.save()
 
     # update article

@@ -1,7 +1,10 @@
 from django.http import HttpResponse, JsonResponse
+import logging as log
 
 from utb import utils
 from utb.models import User, Friendship
+
+LOGGING_TAG = "GetLeaderboard: "
 
 
 def handler(request):
@@ -14,15 +17,18 @@ def handler(request):
     """
     is_token_valid, message = utils.check_google_token(request)
     if not is_token_valid:
+        log.error(LOGGING_TAG + message)
         return HttpResponse(message, status=403)
     user_id = message
 
     requester = utils.get_user_by_id(user_id)
     if not requester:
+        log.error(LOGGING_TAG + "Missing user")
         return HttpResponse("Missing user", status=404)
 
     is_object_present, object_json = utils.get_object(request)
     if not is_object_present:
+        log.error(LOGGING_TAG + object_json["error"])
         return HttpResponse(object_json["error"], status=404)
 
     leaderboard_type = object_json["type"]
@@ -48,4 +54,5 @@ def handler(request):
         data = {"user_position": user_position, "leaderboard": leaderboard}
         return JsonResponse(data, status=200)
     else:
+        log.error(LOGGING_TAG + "Wrong leaderboard type")
         return HttpResponse("Wrong leaderboard type", status=400)
