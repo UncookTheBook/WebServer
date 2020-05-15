@@ -79,6 +79,7 @@ def handler(request):
                 article.fake_reports += user.weight
     report.save()
     log.info(LOGGING_TAG + "Report with user " + user.email + " and article " + article.url + " created")
+    article.save()
 
     updated_status = article.get_status()
     if previous_status != updated_status:
